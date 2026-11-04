@@ -1,13 +1,4 @@
-import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from "react";
-
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
@@ -136,29 +127,14 @@ export function AuthProvider({ children }) {
     // Ingresar como invitado.
     const signInAsGuest = useCallback(async () => {
         const { data, error } = await supabase.auth.signInAnonymously();
-
         if (error) throw error;
-
-        // Actualizar inmediatamente el contexto.
-        if (data.session && data.user) {
-            setSession(data.session);
-            setUser(data.user);
-            setLoading(false);
-        }
-
         return data;
     }, []);
 
     // Cerrar sesión.
     const signOut = useCallback(async () => {
         const { error } = await supabase.auth.signOut();
-
         if (error) throw error;
-
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
     }, []);
 
     // Actualizar perfil.
