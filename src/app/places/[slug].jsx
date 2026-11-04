@@ -4,6 +4,7 @@ import {
     Image,
     Linking,
     Pressable,
+    ScrollView,
     Share,
     StyleSheet,
     View,
@@ -37,6 +38,8 @@ import PlaceMap from "../../components/places/PlaceMap";
 import PlaceComments from "../../components/places/PlaceComments";
 
 import { tokens } from "../../theme/tokens";
+import Button from "../../components/ui/Button";
+import Advertising from "../../components/Advertising";
 
 export default function PlaceDetailScreen() {
     const { slug } = useLocalSearchParams();
@@ -223,11 +226,8 @@ export default function PlaceDetailScreen() {
     // Galería
     // --------------------------------------------------
 
-    const galleryImages = Array.isArray(place?.gallery_images)
-        ? place.gallery_images.filter(
-            image => typeof image === "string" && image.trim()
-        )
-        : [];
+    const cover = place?.cover_image_url ? { uri: place.cover_image_url } : require("../../../assets/images/placeholder.png")
+    const galleryImages = Array.isArray(place?.gallery_images) ? place.gallery_images.filter(image => typeof image === "string" && image.trim()) : [];
 
     const allGalleryImages = [
         ...(place?.cover_image_url ? [place.cover_image_url] : []),
@@ -454,102 +454,28 @@ export default function PlaceDetailScreen() {
     // --------------------------------------------------
 
     return (
-        <Screen>
+        <Screen padding={0}>
             <View style={styles.container}>
 
-                {/* Cabecera */}
-                <View style={styles.topBar}>
-                    <Pressable
-                        onPress={() => router.back()}
-                        style={styles.backButton}
-                    >
-                        <IconApp
-                            icon={ArrowLeft}
-                            color={tokens.colors.black}
-                            size="lg"
-                        />
-                    </Pressable>
-
-                    <TextApp
-                        font="semibold"
-                        size="sm"
-                        color={tokens.colors.black}
-                    >
-                        Detalles del lugar
-                    </TextApp>
-
-                    <Pressable
-                        onPress={sharePlace}
-                        style={styles.topShareButton}
-                    >
-                        <IconApp
-                            icon={Share2}
-                            color={tokens.colors.black}
-                            size="md"
-                        />
-                    </Pressable>
+                <View style={styles.hero}>
+                    <View style={styles.topBar}>
+                        <Button variant="iconOnly" icon={ArrowLeft} iconOnly radius="full" onPress={() => router.back()} />
+                        <View style={{ flexDirection: "row", gap: 8 }}>
+                            <Button variant="iconOnly" icon={Heart} iconOnly radius="full" />
+                            <Button variant="iconOnly" icon={Share2} iconOnly radius="full" onPress={sharePlace} />
+                        </View>
+                    </View>
+                    <Image source={cover} style={styles.heroImage} />
                 </View>
-
-                {/* Imagen principal */}
-                <Pressable
-                    style={styles.heroContainer}
-                    onPress={() => openGallery(0)}
-                >
-                    <Image
-                        source={
-                            place.cover_image_url
-                                ? { uri: place.cover_image_url }
-                                : require("../../../assets/images/placeholder.png")
-                        }
-                        style={styles.heroImage}
-                        resizeMode="contain"
-                    />
-
-                    {place.is_featured && (
-                        <View style={styles.featuredBadge}>
-                            <TextApp
-                                color="#FFFFFF"
-                                size="xs"
-                                font="semibold"
-                            >
-                                Destacado
-                            </TextApp>
-                        </View>
-                    )}
-
-                    {allGalleryImages.length > 0 && (
-                        <View style={styles.photoCount}>
-                            <TextApp
-                                color="#FFFFFF"
-                                size="xs"
-                                font="semibold"
-                            >
-                                Ver fotos · {allGalleryImages.length}
-                            </TextApp>
-                        </View>
-                    )}
-                </Pressable>
 
                 {/* Información principal */}
                 <View style={styles.mainInfo}>
                     <View style={styles.badgesRow}>
-                        {!!place.category && (
-                            <Badge label={place.category} />
-                        )}
-
-                        {!!place.is_verified && (
-                            <Badge label="Verificado" />
-                        )}
+                        {!!place.category && ( <Badge label={place.category} />)}
+                        {!!place.is_verified && ( <Badge label="Verificado" />)}
                     </View>
 
-                    <TextApp
-                        font="bold"
-                        size="2xl"
-                        color={tokens.colors.black}
-                        style={styles.placeName}
-                    >
-                        {place.name}
-                    </TextApp>
+                    <TextApp font="bold" size="4xl" color={tokens.colors.black} style={styles.placeName}>{place.name}</TextApp>
 
                     {(place.district || place.province) && (
                         <View style={styles.locationRow}>
@@ -571,309 +497,81 @@ export default function PlaceDetailScreen() {
                     )}
 
                     {!!place.short_description && (
-                        <TextApp
-                            size="md"
-                            color={tokens.colors.gray}
-                            style={styles.shortDescription}
-                        >
-                            {place.short_description}
-                        </TextApp>
+                        <TextApp size="md" color={tokens.colors.gray} style={styles.shortDescription}>{place.short_description}</TextApp>
                     )}
-
-                    {/* Acciones */}
-                    <View style={styles.actionsRow}>
-                        <Pressable
-                            style={[
-                                styles.actionButton,
-                                isFavorite && styles.favoriteActive,
-                            ]}
-                            onPress={toggleFavorite}
-                            disabled={favoriteLoading || !user?.id}
-                        >
-                            {favoriteLoading ? (
-                                <ActivityIndicator
-                                    size="small"
-                                    color={isFavorite ? "#FFFFFF" : tokens.colors.primary}
-                                />
-                            ) : (
-                                <IconApp
-                                    icon={Heart}
-                                    size="md"
-                                    color={isFavorite ? "#FFFFFF" : tokens.colors.black}
-                                />
-                            )}
-
-                            <TextApp
-                                size="sm"
-                                font="semibold"
-                                color={isFavorite ? "#FFFFFF" : tokens.colors.black}
-                            >
-                                {isFavorite ? "Guardado" : "Favorito"}
-                            </TextApp>
-                        </Pressable>
-
-                        <Pressable
-                            style={styles.actionButton}
-                            onPress={sharePlace}
-                        >
-                            <IconApp
-                                icon={Share2}
-                                size="md"
-                                color={tokens.colors.black}
-                            />
-
-                            <TextApp size="sm" font="semibold">
-                                Compartir
-                            </TextApp>
-                        </Pressable>
-                    </View>
 
                     {!user?.id && (
-                        <TextApp size="xs" color={tokens.colors.gray}>
-                            Inicia sesión para guardar este lugar en favoritos.
-                        </TextApp>
+                        <TextApp size="xs" color={tokens.colors.gray}>Inicia sesión para guardar este lugar en favoritos.</TextApp>
                     )}
-                </View>
-
-                {/* Descripción */}
-                {!!place.description && (
+                    
                     <View style={styles.section}>
-                        <TextApp font="semibold" size="lg">
-                            Sobre este lugar
-                        </TextApp>
+                        <TextApp font="semibold" size="lg">Información del lugar</TextApp>
 
-                        <TextApp
-                            size="sm"
-                            color={tokens.colors.gray}
-                            style={styles.bodyText}
-                        >
-                            {place.description}
-                        </TextApp>
-                    </View>
-                )}
-
-                {/* Información del atractivo */}
-                <View style={styles.section}>
-                    <TextApp font="semibold" size="lg">
-                        Información del lugar
-                    </TextApp>
-
-                    <View style={styles.infoGrid}>
-                        <InfoItem
-                            icon={Info}
-                            label="Tipo"
-                            value={place.type}
-                        />
-
-                        <InfoItem
-                            icon={Info}
-                            label="Subtipo"
-                            value={place.subtype}
-                        />
-
-                        <InfoItem
-                            icon={Mountain}
-                            label="Dificultad"
-                            value={place.difficulty_level}
-                        />
-
-                        <InfoItem
-                            icon={Clock3}
-                            label="Duración recomendada"
-                            value={formatDuration(
-                                place.recommended_duration_minutes
-                            )}
-                        />
-
-                        <InfoItem
-                            icon={CalendarDays}
-                            label="Mejor época para visitar"
-                            value={place.best_time_to_visit}
-                        />
-
-                        <InfoItem
-                            icon={Ticket}
-                            label="Entrada"
-                            value={
-                                place.is_free === true
-                                    ? "Ingreso gratuito"
-                                    : place.entrance_fee !== null &&
-                                        place.entrance_fee !== undefined
-                                        ? `${place.currency || "S/"} ${place.entrance_fee}`
-                                        : place.is_free === false
-                                            ? "Consultar tarifa"
-                                            : null
-                            }
-                        />
-                    </View>
-                </View>
-
-                {/* Actividades */}
-                <ContentList
-                    title="Actividades"
-                    items={place.activities}
-                />
-
-                {/* Tipos de visitantes */}
-                <ContentList
-                    title="Ideal para"
-                    items={place.visitor_types}
-                />
-
-                {/* Recomendaciones */}
-                <ContentList
-                    title="Recomendaciones para tu visita"
-                    items={place.recommendations}
-                />
-
-                {/* Horarios */}
-                {!!place.opening_hours && (
-                    <View style={styles.section}>
-                        <TextApp font="semibold" size="lg">
-                            Horarios de atención
-                        </TextApp>
-
-                        <View style={styles.hoursCard}>
-                            <IconApp
-                                icon={Clock3}
-                                color={tokens.colors.primary}
-                                size="lg"
-                            />
-
-                            <TextApp
-                                size="sm"
-                                color={tokens.colors.black}
-                                style={styles.hoursText}
-                            >
-                                {formatOpeningHours(place.opening_hours)}
-                            </TextApp>
+                        <View style={styles.infoGrid}>
+                            <InfoItem icon={Info} label="Tipo" value={place.type}/>
+                            <InfoItem icon={Info} label="Subtipo" value={place.subtype}/>
+                            <InfoItem icon={Mountain} label="Dificultad" value={place.difficulty_level}/>
+                            <InfoItem icon={Clock3} label="Duración recomendada" value={formatDuration(place.recommended_duration_minutes)}/>
+                            <InfoItem icon={CalendarDays} label="Mejor época para visitar" value={place.best_time_to_visit}/>
+                            <InfoItem icon={Ticket} label="Entrada" value={place.is_free === true ? "Ingreso gratuito" : place.entrance_fee !== null && place.entrance_fee !== undefined ? `${place.currency || "S/"} ${place.entrance_fee}` : place.is_free === false ? "Consultar tarifa" : null}/>
                         </View>
                     </View>
-                )}
 
-                {/* Galería */}
-                {allGalleryImages.length > 0 && (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <TextApp font="semibold" size="lg">
-                                Galería
-                            </TextApp>
+                    <ContentList title="Actividades" items={place.activities}/>
+                    <ContentList title="Ideal para" items={place.visitor_types}/>
+                    <ContentList title="Recomendaciones para tu visita" items={place.recommendations}/>
 
-                            <TextApp size="xs" color={tokens.colors.gray}>
-                                {allGalleryImages.length} fotos
-                            </TextApp>
-                        </View>
-
-                        <View style={styles.galleryGrid}>
-                            {allGalleryImages.map((image, index) => (
-                                <Pressable
-                                    key={`${image}-${index}`}
-                                    onPress={() => openGallery(index)}
-                                    style={styles.galleryItem}
-                                >
-                                    <Image
-                                        source={{ uri: image }}
-                                        style={styles.galleryImage}
-                                        resizeMode="cover"
-                                    />
-                                </Pressable>
-                            ))}
-                        </View>
-                    </View>
-                )}
-
-                {/* Ubicación */}
-                <View style={styles.section}>
-                    <TextApp font="semibold" size="lg">
-                        ¿Cómo llegar?
-                    </TextApp>
-
-                    {!!place.address && (
-                        <View style={styles.addressRow}>
-                            <IconApp
-                                icon={MapPin}
-                                size="md"
-                                color={tokens.colors.primary}
-                            />
-
-                            <View style={styles.addressText}>
-                                <TextApp size="xs" color={tokens.colors.gray}>
-                                    Dirección
-                                </TextApp>
-
-                                <TextApp size="sm" font="semibold">
-                                    {place.address}
-                                </TextApp>
+                    {!!place.opening_hours && (
+                        <View style={styles.section}>
+                            <TextApp font="semibold" size="lg">Horarios de atención</TextApp>
+                            <View style={styles.hoursCard}>
+                                <IconApp icon={Clock3} color={tokens.colors.primary} size="lg"/>
+                                <TextApp size="sm" color={tokens.colors.black} style={styles.hoursText}>{formatOpeningHours(place.opening_hours)}</TextApp>
                             </View>
                         </View>
                     )}
+                    
+                    <View style={styles.section}>
+                        <TextApp font="semibold" size="lg">¿Cómo llegar?</TextApp>
 
-                    {!!place.reference && (
-                        <TextApp size="sm" color={tokens.colors.gray}>
-                            Referencia: {place.reference}
-                        </TextApp>
-                    )}
+                        {!!place.address && (
+                            <View style={styles.addressRow}>
+                                <IconApp icon={MapPin} size="md" color={tokens.colors.primary}/>
+                                <View style={styles.addressText}>
+                                    <TextApp size="xs" color={tokens.colors.gray}>Dirección</TextApp>
+                                    <TextApp size="sm" font="semibold">{place.address}</TextApp>
+                                </View>
+                            </View>
+                        )}
 
-                    <PlaceMap place={place} />
+                        {!!place.reference && ( <TextApp size="sm" color={tokens.colors.gray}>Referencia: {place.reference}</TextApp> )}
+                        <PlaceMap place={place} />
+                    </View>
 
-                    {!!place.google_maps_url && (
-                        <Pressable
-                            style={styles.externalMapButton}
-                            onPress={() => Linking.openURL(place.google_maps_url)}
-                        >
-                            <TextApp
-                                color={tokens.colors.primary}
-                                font="semibold"
-                                size="sm"
-                            >
-                                Abrir en Google Maps
-                            </TextApp>
-
-                            <IconApp
-                                icon={ExternalLink}
-                                color={tokens.colors.primary}
-                                size="sm"
-                            />
-                        </Pressable>
-                    )}
                 </View>
 
-                {/* Comentarios */}
-                <View style={styles.section}>
-                    <PlaceComments
-                        placeId={place.id}
-                        userId={user?.id}
-                    />
-                </View>
+                {allGalleryImages.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={[styles.sectionHeader, { paddingHorizontal: 24 }]}>
+                            <TextApp font="semibold" size="lg">Galería</TextApp>
+                        </View>
 
-                {/* Cierre */}
-                <View style={styles.footer}>
-                    <TextApp
-                        font="semibold"
-                        size="lg"
-                        textAlign="center"
-                    >
-                        Descubre Jauja con Ándale Ya!
-                    </TextApp>
-
-                    <TextApp
-                        size="xs"
-                        color={tokens.colors.gray}
-                        textAlign="center"
-                    >
-                        Explora, conoce y vive nuevas experiencias.
-                    </TextApp>
-                </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryGrid} nestedScrollEnabled>
+                            {allGalleryImages.map((image, index) => (
+                                <Pressable key={`${image}-${index}`} onPress={() => openGallery(index)} style={styles.galleryItem}>
+                                    <Image source={{ uri: image }} style={styles.galleryImage} resizeMode="cover"/>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
 
             </View>
 
-            {/* Visor de fotografías */}
-            <PlaceImageViewer
-                visible={viewerVisible}
-                images={allGalleryImages}
-                initialIndex={selectedImageIndex}
-                onClose={() => setViewerVisible(false)}
-            />
+            <Advertising/>
+
+            <PlaceImageViewer visible={viewerVisible} images={allGalleryImages} initialIndex={selectedImageIndex} onClose={() => setViewerVisible(false)}/>
+
         </Screen>
     );
 }
@@ -911,13 +609,23 @@ const styles = StyleSheet.create({
         padding: 10,
     },
 
+    hero: {
+        width: "100%",
+        height: 360,
+        backgroundColor: "#F1F1F1",
+    },
+
     // Cabecera
     topBar: {
+        position: "absolute",
+        zIndex: 10,
+        top: 14,
+        left: 14,
+        right: 14,
         height: 54,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 12,
     },
 
     backButton: {
@@ -979,8 +687,13 @@ const styles = StyleSheet.create({
 
     // Información principal
     mainInfo: {
+        marginTop: -40,
         paddingTop: 20,
         gap: 12,
+        paddingHorizontal: 24,
+        backgroundColor: tokens.colors.white,
+        borderTopLeftRadius: tokens.radius.xl,
+        borderTopRightRadius: tokens.radius.xl,
     },
 
     badgesRow: {
@@ -1123,13 +836,12 @@ const styles = StyleSheet.create({
     },
 
     galleryGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
         gap: 10,
+        paddingHorizontal: 24,
     },
 
     galleryItem: {
-        width: "31%",
+        width: "100%",
         aspectRatio: 1,
         borderRadius: 12,
         overflow: "hidden",

@@ -9,6 +9,7 @@ import Input from "../components/ui/Input";
 import { Mail, Lock, User } from "lucide-react-native";
 import Divider from "../components/ui/Divider";
 import { useAuth } from "../context/AuthContext";
+import { Redirect } from "expo-router";
 
 export default function Index() {
 
@@ -44,6 +45,12 @@ export default function Index() {
     };
 
     console.log(JSON.stringify(user, null, 2));
+
+    if (loading) return null;
+
+    if (user) {
+        return <Redirect href="/(tabs)" />;
+    }
     
 
     return (

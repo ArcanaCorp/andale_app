@@ -111,11 +111,7 @@ export default function PlaceComments({ placeId, userId }) {
                 <Input
                     value={comment}
                     onChangeText={setComment}
-                    placeholder={
-                        userId
-                            ? "¿Qué te pareció este lugar?"
-                            : "Inicia sesión para comentar"
-                    }
+                    placeholder={userId ? "¿Qué te pareció este lugar?" : "Inicia sesión para comentar"}
                     disabled={!userId || sending}
                     size="lg"
                 />
@@ -198,6 +194,7 @@ const styles = StyleSheet.create({
         gap: 9,
     },
     form: {
+        flex: 1,
         flexDirection: "row",
         alignItems: "center",
         gap: 8,

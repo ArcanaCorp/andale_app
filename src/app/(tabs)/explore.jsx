@@ -109,23 +109,28 @@ export default function Explore() {
     };
 
     return (
-        <Screen>
+        <Screen padding={0}>
             <View style={styles.container}>
                 <View style={styles.heading}>
-                    <TextApp size="sm" color="muted">CONOCE NUESTRO DESTINO</TextApp>
-                    <TextApp font="bold" size="4xl" color="black">Explorar</TextApp>
-                    <TextApp size="sm" color="muted">Encuentra lugares turísticos en la provincia de Jauja.</TextApp>
+                    <View style={{paddingHorizontal: 24, gap: 4}}>
+                        <TextApp size="sm" color="muted">CONOCE NUESTRO DESTINO</TextApp>
+                        <TextApp font="bold" size="4xl" color="black">Explorar</TextApp>
+                        <TextApp size="sm" color="muted">Encuentra lugares turísticos en la provincia de Jauja.</TextApp>
+                    </View>
+
+                    <View style={{paddingHorizontal: 24, gap: 4}}>
+                        <Input icon={Search} iconPosition="left" placeholder="Buscar lugares, distritos..." value={search} onChangeText={setSearch}/>
+                    </View>
+
+                    {categories.length > 1 && (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+                            {categories.map(item => (
+                                <Chip key={item} item={item} selected={category === item} handleCategoryChange={handleCategoryChange} />
+                            ))}
+                        </ScrollView>
+                    )}
                 </View>
 
-                <Input icon={Search} iconPosition="left" placeholder="Buscar lugares, distritos..." value={search} onChangeText={setSearch}/>
-
-                {categories.length > 1 && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
-                        {categories.map(item => (
-                            <Chip key={item} item={item} selected={category === item} handleCategoryChange={handleCategoryChange} />
-                        ))}
-                    </ScrollView>
-                )}
 
                 <View style={styles.results}>
                     <TextApp font="semibold" size="lg" color="#181818">
@@ -197,15 +202,20 @@ const styles = StyleSheet.create({
         gap: 22,
     },
     heading: {
-        gap: 8,
+        gap: 22,
+        paddingVertical: 20,
+        backgroundColor: "#FFFFFF",
+        borderBottomWidth: .5,
+        borderBottomColor: "#EEEEEE",
     },
     categories: {
         flexDirection: "row",
-        flexWrap: "wrap",
         gap: 8,
+        paddingHorizontal: 24,
     },
     results: {
         gap: 14,
+        paddingHorizontal: 24,
     },
     discoverButton: {
         minHeight: 52,

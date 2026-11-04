@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 
 import Screen from "../../components/ui/Screen";
 import TextApp from "../../components/ui/TextApp";
 import PlaceCard from "../../components/places/PlaceCard";
 import { getFeaturedPlaces, getPlaces } from "../../services/places.service";
 import { useAuth } from "../../context/AuthContext";
+import Avatar from "../../components/ui/Avatar";
+import Advertising from "../../components/Advertising";
 
 export default function Home() {
     const { user } = useAuth();
@@ -39,62 +41,33 @@ export default function Home() {
     }, [loadPlaces]);
 
     return (
-        <Screen>
+        <Screen padding={0}>
             <View style={styles.container}>
                 <View style={styles.header}>
                     <View>
-                        <TextApp size="sm" color="#767676">
-                            ÁNDALE YA! · JUNÍN
-                        </TextApp>
-
-                        <TextApp font="bold" size="3xl" color="#181818">
-                            ¡Bienvenido a Jauja!
-                        </TextApp>
+                        <TextApp size="md" color="muted">Bienvenido,</TextApp>
+                        <TextApp font="bold" size="4xl" color="black">Julian</TextApp>
                     </View>
-
-                    <View style={styles.avatar}>
-                        <TextApp font="bold" color="#F90050" size="lg">
-                            {(user?.email?.[0] || "V").toUpperCase()}
-                        </TextApp>
-                    </View>
+                    <Avatar name={(user?.email?.[0] || "Anónimo").toUpperCase()}/>
                 </View>
 
-                <View style={styles.intro}>
-                    <TextApp font="medium" size="xl" color="#181818">
-                        Descubre, explora y vive Jauja.
-                    </TextApp>
-
-                    <TextApp size="sm" color="#767676">
-                        Encuentra lugares increíbles, conoce nuestra cultura
-                        y descubre nuevas experiencias en la provincia.
-                    </TextApp>
-                </View>
+                <Advertising />
 
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <TextApp font="bold" size="xl" color="#181818">
-                            Lugares destacados
-                        </TextApp>
-
-                        <TextApp size="xs" color="#767676">
-                            JAUJA, JUNÍN
-                        </TextApp>
+                        <TextApp font="bold" size="xl" color="#181818">Lugares destacados</TextApp>
                     </View>
 
                     {loading ? (
                         <ActivityIndicator color="#F90050" />
                     ) : error ? (
-                        <TextApp color="#767676" size="sm">
-                            {error}
-                        </TextApp>
+                        <TextApp color="#767676" size="sm">{error}</TextApp>
                     ) : places.length ? (
                         places.map(place => (
                             <PlaceCard key={place.id} place={place} />
                         ))
                     ) : (
-                        <TextApp color="#767676" size="sm">
-                            Próximamente encontrarás aquí lugares destacados.
-                        </TextApp>
+                        <TextApp color="#767676" size="sm">Próximamente encontrarás aquí lugares destacados.</TextApp>
                     )}
                 </View>
             </View>
@@ -110,8 +83,13 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: "row",
         alignItems: "center",
+        paddingHorizontal: 24,
+        paddingVertical: 20,
         justifyContent: "space-between",
         gap: 12,
+        backgroundColor: "#FFFFFF",
+        borderBottomWidth: .5,
+        borderBottomColor: "#EEEEEE",
     },
     avatar: {
         width: 44,
@@ -129,8 +107,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#EEEEEE",
     },
+    publish: {
+        flex: 1,
+        gap: 12,
+    },
+    publishItem: {
+        flex: 1,
+        height: 160,
+        backgroundColor: "#FCE7EF",
+        borderRadius: 20,
+    },
     section: {
         gap: 15,
+        paddingHorizontal: 24,
     },
     sectionHeader: {
         flexDirection: "row",

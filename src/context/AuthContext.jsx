@@ -13,7 +13,6 @@ import { supabase } from "../lib/supabase";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-
     const [session, setSession] = useState(null);
     const [user, setUser] = useState(null);
     const [profile, setProfile] = useState(null);
@@ -21,7 +20,30 @@ export function AuthProvider({ children }) {
 
     const profileRequestRef = useRef(0);
 
-    // Crear o recuperar el perfil del usuario.
+    // Escuchar los cambios de autenticación.
+    useEffect(() => {
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+            const nextUser = nextSession?.user ?? null;
+
+            setSession(nextSession);
+            setUser(nextUser);
+            setLoading(false);
+
+            if (!nextUser) {
+                profileRequestRef.current += 1;
+                setProfile(null);
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+            profileRequestRef.current += 1;
+        };
+    }, []);
+
+    // Sincronizar el perfil sin bloquear la navegación.
     const syncProfile = useCallback(async (authUser) => {
         if (!authUser) {
             setProfile(null);
@@ -64,7 +86,6 @@ export function AuthProvider({ children }) {
 
         if (error) throw error;
 
-        // Evitar que una petición antigua actualice el perfil.
         if (requestId === profileRequestRef.current) {
             setProfile(data);
         }
@@ -72,70 +93,21 @@ export function AuthProvider({ children }) {
         return data;
     }, []);
 
-    // Escuchar cambios de autenticación.
+    // El perfil se carga independientemente del estado de autenticación.
     useEffect(() => {
-        let mounted = true;
-
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((event, nextSession) => {
-            if (!mounted) return;
-
-            const nextUser = nextSession?.user ?? null;
-
-            setSession(nextSession);
-            setUser(nextUser);
-
-            if (!nextUser) {
-                profileRequestRef.current += 1;
-                setProfile(null);
-                setLoading(false);
-                return;
-            }
-
-            // Solo sincronizar el perfil en eventos relevantes.
-            const shouldSyncProfile = [
-                "INITIAL_SESSION",
-                "SIGNED_IN",
-                "USER_UPDATED",
-            ].includes(event);
-
-            if (!shouldSyncProfile) {
-                setLoading(false);
-                return;
-            }
-
-            setProfile((currentProfile) =>
-                currentProfile?.id === nextUser.id
-                    ? currentProfile
-                    : null
-            );
-
-            // Evitar ejecutar operaciones de Supabase dentro del callback.
-            Promise.resolve()
-                .then(() => syncProfile(nextUser))
-                .catch((error) => {
-                    console.error(
-                        "Error sincronizando perfil:",
-                        error
-                    );
-                })
-                .finally(() => {
-                    if (mounted) {
-                        setLoading(false);
-                    }
-                });
-        });
-
-        return () => {
-            mounted = false;
+        if (!user) {
             profileRequestRef.current += 1;
-            subscription.unsubscribe();
-        };
-    }, [syncProfile]);
+            setProfile(null);
+            return;
+        }
 
-    // Iniciar sesión.
-    const signIn = async (email, password) => {
+        syncProfile(user).catch((error) => {
+            console.error("Error sincronizando perfil:", error);
+        });
+    }, [user, syncProfile]);
+
+    // Iniciar sesión con correo.
+    const signIn = useCallback(async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({
             email: email.trim(),
             password,
@@ -144,45 +116,53 @@ export function AuthProvider({ children }) {
         if (error) throw error;
 
         return data;
-    };
+    }, []);
 
     // Registrar cuenta.
-    const signUp = async (email, password, fullName = "") => {
+    const signUp = useCallback(async (email, password, fullName = "") => {
         const { data, error } = await supabase.auth.signUp({
             email: email.trim(),
             password,
             options: {
-                data: {
-                    full_name: fullName,
-                },
+                data: { full_name: fullName },
             },
         });
 
         if (error) throw error;
 
         return data;
-    };
+    }, []);
 
-    // Entrar como visitante.
-    const signInAsGuest = async () => {
+    // Ingresar como invitado.
+    const signInAsGuest = useCallback(async () => {
         const { data, error } = await supabase.auth.signInAnonymously();
 
         if (error) throw error;
 
+        // Actualizar inmediatamente el contexto.
+        if (data.session && data.user) {
+            setSession(data.session);
+            setUser(data.user);
+            setLoading(false);
+        }
+
         return data;
-    };
+    }, []);
 
     // Cerrar sesión.
-    const signOut = async () => {
+    const signOut = useCallback(async () => {
         const { error } = await supabase.auth.signOut();
 
         if (error) throw error;
 
-        // El listener onAuthStateChange actualizará el contexto.
-    };
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+    }, []);
 
     // Actualizar perfil.
-    const updateProfile = async (changes) => {
+    const updateProfile = useCallback(async (changes) => {
         if (!user) {
             throw new Error("No existe una sesión activa.");
         }
@@ -217,32 +197,37 @@ export function AuthProvider({ children }) {
         setProfile(data);
 
         return data;
-    };
+    }, [user]);
 
     const refreshProfile = useCallback(() => {
         return syncProfile(user);
     }, [syncProfile, user]);
 
-    const value = useMemo(
-        () => ({
-            session,
-            user,
-            profile,
-
-            isAuthenticated: !!session,
-            isGuest: !!user?.is_anonymous,
-
-            loading,
-
-            signIn,
-            signUp,
-            signInAsGuest,
-            signOut,
-            updateProfile,
-            refreshProfile,
-        }),
-        [session, user, profile, loading, refreshProfile]
-    );
+    const value = useMemo(() => ({
+        session,
+        user,
+        profile,
+        isAuthenticated: !!session,
+        isGuest: !!user?.is_anonymous,
+        loading,
+        signIn,
+        signUp,
+        signInAsGuest,
+        signOut,
+        updateProfile,
+        refreshProfile,
+    }), [
+        session,
+        user,
+        profile,
+        loading,
+        signIn,
+        signUp,
+        signInAsGuest,
+        signOut,
+        updateProfile,
+        refreshProfile,
+    ]);
 
     return (
         <AuthContext.Provider value={value}>

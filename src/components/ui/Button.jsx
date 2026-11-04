@@ -31,6 +31,15 @@ const VARIANTS = {
         borderColor: "transparent",
         textColor: tokens.colors.gray,
     },
+    iconOnly: {
+        borderColor: "transparent",
+        backgroundColor: tokens.colors.white
+    },
+    transparent: {
+        backgroundColor: "transparent",
+        borderColor: "transparent",
+        textColor: tokens.colors.black,
+    }
 };
 
 const SIZES = {

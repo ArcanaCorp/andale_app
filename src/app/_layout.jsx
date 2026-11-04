@@ -1,4 +1,4 @@
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { useFonts } from "expo-font";
 import Providers from "../providers";
@@ -15,28 +15,7 @@ import { useAuth } from "../context/AuthContext";
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Routes({ fontsReady }) {
-    const { user, loading } = useAuth();
-
-    const router = useRouter();
-    const segments = useSegments();
-
-    useEffect(() => {
-        if (!fontsReady || loading || segments.length === 0) return;
-
-        const firstSegment = segments[0];
-        const isLogin = firstSegment === "index";
-
-        // Si el usuario está autenticado, no debe quedarse en Login.
-        if (user && isLogin) {
-            router.replace("/(tabs)");
-            return;
-        }
-
-        // Si no está autenticado, debe volver al Login.
-        if (!user && !isLogin) {
-            router.replace("/");
-        }
-    }, [user, loading, segments, fontsReady, router]);
+    const { loading } = useAuth();
 
     useEffect(() => {
         if (fontsReady && !loading) {
@@ -50,6 +29,7 @@ function Routes({ fontsReady }) {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="places" />
         </Stack>
     );
 }

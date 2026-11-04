@@ -78,9 +78,7 @@ export default function Input({
                     paddingHorizontal: tokens.spacing[3],
                     columnGap: tokens.spacing[2],
                     backgroundColor: tokens.colors.white,
-                    borderWidth: focused
-                        ? tokens.borderWidth.medium
-                        : tokens.borderWidth.thin,
+                    borderWidth: focused ? tokens.borderWidth.medium : tokens.borderWidth.thin,
                     borderColor,
                     borderRadius: tokens.radius.lg,
                     opacity: disabled ? tokens.opacity.disabled : 1,
