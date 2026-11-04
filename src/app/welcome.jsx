@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 
 import Screen from "../components/ui/Screen";
 import TextApp from "../components/ui/TextApp";
@@ -11,17 +11,31 @@ import Divider from "../components/ui/Divider";
 import { useAuth } from "../context/AuthContext";
 import { Redirect } from "expo-router";
 
-export default function Index() {
+export default function Welcome() {
 
-    const { signInAsGuest, loading, user } = useAuth();
+    const { signIn, signInAsGuest, loading, user } = useAuth();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [guestLoading, setGuestLoading] = useState(false);
+    const [authLoading, setAuthLoading] = useState(false);
 
-    const handleLogin = () => {
-        // Próxima etapa: autenticación con correo y contraseña
-        console.log("Login:", email, password);
+    const handleLogin = async () => {
+        if (authLoading) return;
+
+        if (!email.trim() || !password) {
+            Alert.alert("Datos incompletos", "Ingresa tu correo electrónico y contraseña.");
+            return;
+        }
+
+        try {
+            setAuthLoading(true);
+            await signIn(email, password);
+        } catch (error) {
+            console.error("Error iniciando sesión:", error);
+            Alert.alert("No se pudo iniciar sesión", error.message || "Verifica tus credenciales e inténtalo nuevamente.");
+        } finally {
+            setAuthLoading(false);
+        }
     };
 
     const handleGoogle = () => {
@@ -33,14 +47,14 @@ export default function Index() {
     };
 
     const handleGuest = async () => {
-        if (guestLoading) return;
+        if (authLoading) return;
         try {
-            setGuestLoading(true);
+            setAuthLoading(true);
             await signInAsGuest();
         } catch (error) {
             console.error(error.message);
         } finally {
-            setGuestLoading(false);
+            setAuthLoading(false);
         }
     };
 
@@ -48,10 +62,9 @@ export default function Index() {
 
     if (loading) return null;
 
-    if (user) {
+    if (user !== null) {
         return <Redirect href="/(tabs)" />;
     }
-    
 
     return (
         <Screen>
@@ -59,7 +72,6 @@ export default function Index() {
 
                 {/* Bienvenida */}
                 <View style={styles.welcome}>
-                    <TextApp font="medium" size="lg" color="gray" style={styles.subtitle}>Descubre Jauja.</TextApp>
                     <TextApp font="bold" size="6xl" color="black" style={styles.heading}>¡Qué bueno{" "}<TextApp font="bold" size="6xl" color="primary">tenerte aquí!</TextApp></TextApp>
                     <TextApp size="md" color="muted" style={styles.description}>Explora lugares increíbles, descubre nuevas experiencias y vive cada destino a tu manera.</TextApp>
                 </View>
@@ -67,10 +79,10 @@ export default function Index() {
                 {/* Inicio de sesión */}
                 <View style={styles.login}>
                     <View style={styles.inputs}>
-                        <Input icon={Mail} iconPosition="right" placeholder="Correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} disabled={guestLoading}/>
-                        <Input icon={Lock} iconPosition="right" secureTextEntry={true} placeholder="Contraseña" value={password} onChangeText={setPassword} disabled={guestLoading}/>
+                        <Input icon={Mail} iconPosition="right" placeholder="Correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} disabled={authLoading}/>
+                        <Input icon={Lock} iconPosition="right" secureTextEntry={true} placeholder="Contraseña" value={password} onChangeText={setPassword} disabled={authLoading}/>
                     </View>
-                    <Button radius="full" onPress={handleLogin} loading={guestLoading} disabled={guestLoading}>
+                    <Button radius="full" onPress={handleLogin} loading={authLoading} disabled={authLoading}>
                         Ingresar
                     </Button>
                 </View>
@@ -79,9 +91,9 @@ export default function Index() {
 
                 {/* Accesos alternativos */}
                 <View style={styles.actions}>
-                    <Button image={require("../../assets/images/icon-google.png")} variant="secondary" radius="full" onPress={handleGoogle} loading={guestLoading} disabled={guestLoading}>Continuar con Google</Button>
-                    <Button image={require("../../assets/images/icon-facebook.png")} variant="secondary" radius="full" onPress={handleFacebook} loading={guestLoading} disabled={guestLoading}>Continuar con Facebook</Button>
-                    <Button icon={User} variant="secondary" radius="full" onPress={handleGuest} loading={guestLoading} disabled={guestLoading}>Continuar como invitado</Button>
+                    <Button image={require("../../assets/images/icon-google.png")} variant="secondary" radius="full" onPress={handleGoogle} loading={authLoading} disabled={authLoading}>Continuar con Google</Button>
+                    <Button image={require("../../assets/images/icon-facebook.png")} variant="secondary" radius="full" onPress={handleFacebook} loading={authLoading} disabled={authLoading}>Continuar con Facebook</Button>
+                    <Button icon={User} variant="secondary" radius="full" onPress={handleGuest} loading={authLoading} disabled={authLoading}>Continuar como invitado</Button>
                 </View>
 
                 <TextApp size="xs" color="muted" style={styles.legal}>

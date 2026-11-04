@@ -40,6 +40,8 @@ export default function Home() {
         loadPlaces();
     }, [loadPlaces]);
 
+    console.log(JSON.stringify(user, null, 2));
+
     return (
         <Screen padding={0}>
             <View style={styles.container}>

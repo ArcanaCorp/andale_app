@@ -6,8 +6,12 @@ import Screen from "../../components/ui/Screen";
 import TextApp from "../../components/ui/TextApp";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "expo-router";
 
 export default function Profile() {
+
+    const router = useRouter();
+
     const { user, profile, isGuest, signOut } = useAuth();
     const [loading, setLoading] = useState(false);
 
@@ -24,6 +28,7 @@ export default function Profile() {
                         try {
                             setLoading(true);
                             await signOut();
+                            router.replace("/welcome");
                         } catch (error) {
                             Alert.alert("Error", error.message);
                         } finally {

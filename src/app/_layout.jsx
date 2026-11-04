@@ -27,7 +27,7 @@ function Routes({ fontsReady }) {
 
     return (
         <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
+            <Stack.Screen name="welcome" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="places" />
         </Stack>

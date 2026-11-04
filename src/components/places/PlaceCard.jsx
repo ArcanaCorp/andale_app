@@ -15,8 +15,6 @@ export default function PlaceCard({ place, isFavorite, onToggleFavorite, onPress
 
     if (!place) return null;
 
-    console.log("PlaceCard", place);
-
     const cover = place.cover_image_url ? { uri: place.cover_image_url } : require("../../../assets/images/placeholder.png");
 
     const handlePress = () => {
