@@ -11,7 +11,7 @@ import Divider from "../components/ui/Divider";
 import { useAuth } from "../context/AuthContext";
 
 export default function Welcome() {
-    const { authenticate, signInAsGuest } = useAuth();
+    const { authenticate, signInWithProvider, signInAsGuest } = useAuth();
 
     const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
@@ -65,13 +65,29 @@ export default function Welcome() {
         }
     };
 
-    const handleGoogle = () => {
-        // Próxima etapa: autenticación con Google.
+    const handleSocialLogin = async (provider) => {
+        if (authLoading) return;
+
+        const providerName = provider === "google" ? "Google" : "Facebook";
+
+        try {
+            setAuthLoading(true);
+            const result = await signInWithProvider(provider);
+
+            if (result.cancelled) return;
+        } catch (error) {
+            console.error(`Error iniciando sesión con ${providerName}:`, error);
+            Alert.alert(
+                `No se pudo continuar con ${providerName}`,
+                error.message || "Inténtalo nuevamente."
+            );
+        } finally {
+            setAuthLoading(false);
+        }
     };
 
-    const handleFacebook = () => {
-        // Próxima etapa: autenticación con Facebook.
-    };
+    const handleGoogle = () => handleSocialLogin("google");
+    const handleFacebook = () => handleSocialLogin("facebook");
 
     const handleGuest = async () => {
         if (authLoading) return;

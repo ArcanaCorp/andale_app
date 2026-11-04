@@ -30,6 +30,7 @@ function Routes({ fontsReady }) {
     return (
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
+            <Stack.Screen name="auth/callback" />
 
             <Stack.Protected guard={!hasSession} redirectTo="/(tabs)">
                 <Stack.Screen name="welcome" />
