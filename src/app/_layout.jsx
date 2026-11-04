@@ -15,7 +15,8 @@ import { useAuth } from "../context/AuthContext";
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function Routes({ fontsReady }) {
-    const { loading } = useAuth();
+    const { session, loading } = useAuth();
+    const hasSession = Boolean(session);
 
     useEffect(() => {
         if (fontsReady && !loading) {
@@ -23,13 +24,22 @@ function Routes({ fontsReady }) {
         }
     }, [fontsReady, loading]);
 
+    // No renderizar rutas hasta conocer el estado persistido de Supabase.
     if (!fontsReady || loading) return null;
 
     return (
         <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="welcome" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="places" />
+            <Stack.Screen name="index" />
+
+            <Stack.Protected guard={!hasSession} redirectTo="/(tabs)">
+                <Stack.Screen name="welcome" />
+            </Stack.Protected>
+
+            {/* Las sesiones anónimas de Supabase también habilitan la aplicación. */}
+            <Stack.Protected guard={hasSession} redirectTo="/welcome">
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="places" />
+            </Stack.Protected>
         </Stack>
     );
 }
