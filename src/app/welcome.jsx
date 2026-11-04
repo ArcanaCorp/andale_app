@@ -11,25 +11,55 @@ import Divider from "../components/ui/Divider";
 import { useAuth } from "../context/AuthContext";
 
 export default function Welcome() {
-    const { signIn, signInAsGuest } = useAuth();
+    const { authenticate, signInAsGuest } = useAuth();
 
+    const [fullname, setFullname] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [authLoading, setAuthLoading] = useState(false);
 
     const handleLogin = async () => {
         if (authLoading) return;
+
         if (!email.trim() || !password) {
-            Alert.alert("Datos incompletos", "Ingresa tu correo electrónico y contraseña.");
+            Alert.alert(
+                "Datos incompletos",
+                "Ingresa tu correo electrónico y contraseña."
+            );
             return;
         }
 
         try {
             setAuthLoading(true);
-            await signIn(email, password);
+
+            const result = await authenticate(
+                email,
+                password,
+                fullname
+            );
+
+            if (result.requiresEmailConfirmation) {
+                Alert.alert(
+                    "Verifica tu correo",
+                    "Tu cuenta fue creada. Confirma tu dirección de correo electrónico antes de iniciar sesión."
+                );
+                return;
+            }
+
+            Alert.alert(
+                result.isNewUser ? "¡Bienvenido!" : "¡Hola de nuevo!",
+                result.isNewUser
+                    ? "Tu cuenta fue creada correctamente."
+                    : "Has iniciado sesión correctamente."
+            );
+
         } catch (error) {
-            console.error("Error iniciando sesión:", error);
-            Alert.alert("No se pudo iniciar sesión", error.message || "Verifica tus credenciales e inténtalo nuevamente.");
+            console.error("Error de autenticación:", error);
+
+            Alert.alert(
+                "No se pudo continuar",
+                error.message || "Inténtalo nuevamente."
+            );
         } finally {
             setAuthLoading(false);
         }
@@ -66,6 +96,7 @@ export default function Welcome() {
 
                 <View style={styles.login}>
                     <View style={styles.inputs}>
+                        <Input icon={User} iconPosition="right" placeholder="Nombre completo" value={fullname} onChangeText={setFullname} disabled={authLoading}/>
                         <Input icon={Mail} iconPosition="right" placeholder="Correo electrónico" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} disabled={authLoading}/>
                         <Input icon={Lock} iconPosition="right" secureTextEntry={true} placeholder="Contraseña" value={password} onChangeText={setPassword} disabled={authLoading}/>
                     </View>

@@ -10,7 +10,7 @@ import Avatar from "../../components/ui/Avatar";
 import Advertising from "../../components/Advertising";
 
 export default function Home() {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
 
     const [places, setPlaces] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function Home() {
         loadPlaces();
     }, [loadPlaces]);
 
-    console.log(JSON.stringify(user, null, 2));
+    console.log(JSON.stringify(profile, null, 2));
 
     return (
         <Screen padding={0}>
@@ -48,9 +48,9 @@ export default function Home() {
                 <View style={styles.header}>
                     <View>
                         <TextApp size="md" color="muted">Bienvenido,</TextApp>
-                        <TextApp font="bold" size="4xl" color="black">Julian</TextApp>
+                        <TextApp font="bold" size="4xl" color="black">{profile?.full_name || "Anónimo"}</TextApp>
                     </View>
-                    <Avatar name={(user?.email?.[0] || "Anónimo").toUpperCase()}/>
+                    <Avatar name={(profile?.full_name || "Anónimo").toUpperCase()}/>
                 </View>
 
                 <Advertising />

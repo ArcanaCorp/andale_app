@@ -97,10 +97,10 @@ export function AuthProvider({ children }) {
         });
     }, [user, syncProfile]);
 
-    // Iniciar sesión con correo.
+    // Iniciar sesión.
     const signIn = useCallback(async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
+            email: email.trim().toLowerCase(),
             password,
         });
 
@@ -112,10 +112,12 @@ export function AuthProvider({ children }) {
     // Registrar cuenta.
     const signUp = useCallback(async (email, password, fullName = "") => {
         const { data, error } = await supabase.auth.signUp({
-            email: email.trim(),
+            email: email.trim().toLowerCase(),
             password,
             options: {
-                data: { full_name: fullName },
+                data: {
+                    full_name: fullName.trim(),
+                },
             },
         });
 
@@ -123,6 +125,51 @@ export function AuthProvider({ children }) {
 
         return data;
     }, []);
+
+    // Autenticación inteligente: iniciar sesión o crear cuenta.
+    const authenticate = useCallback(async (email, password, fullName = "") => {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        try {
+            const data = await signIn(normalizedEmail, password);
+
+            return {
+                ...data,
+                isNewUser: false,
+            };
+        } catch (error) {
+            // Solo intentar registrar cuando las credenciales indican
+            // que no existe una cuenta, nunca ante cualquier error.
+            const accountNotFound = [
+                "invalid_credentials",
+                "user_not_found",
+            ].includes(error.code);
+
+            if (!accountNotFound) {
+                throw error;
+            }
+
+            if (!fullName.trim()) {
+                throw new Error("Ingresa tu nombre completo para crear tu cuenta.");
+            }
+
+            const data = await signUp(normalizedEmail, password, fullName);
+
+            if (!data.session) {
+                return {
+                    ...data,
+                    isNewUser: true,
+                    requiresEmailConfirmation: true,
+                };
+            }
+
+            return {
+                ...data,
+                isNewUser: true,
+                requiresEmailConfirmation: false,
+            };
+        }
+    }, [signIn, signUp]);
 
     // Ingresar como invitado.
     const signInAsGuest = useCallback(async () => {
@@ -188,6 +235,7 @@ export function AuthProvider({ children }) {
         loading,
         signIn,
         signUp,
+        authenticate,
         signInAsGuest,
         signOut,
         updateProfile,
@@ -199,6 +247,7 @@ export function AuthProvider({ children }) {
         loading,
         signIn,
         signUp,
+        authenticate,
         signInAsGuest,
         signOut,
         updateProfile,
