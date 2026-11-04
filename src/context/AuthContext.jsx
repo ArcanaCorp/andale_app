@@ -175,41 +175,110 @@ export function AuthProvider({ children }) {
         }
     }, [signIn, signUp]);
 
-
     // OAuth compartido para Google y Facebook mediante PKCE + deep link.
+    // Instrumentación temporal para identificar exactamente dónde se detiene el flujo.
     const signInWithProvider = useCallback(async (provider) => {
         const supportedProviders = ["google", "facebook"];
-        if (!supportedProviders.includes(provider)) throw new Error("Proveedor de autenticación no soportado.");
 
-        const redirectTo = Linking.createURL("auth/callback");
-        const { data, error } = await supabase.auth.signInWithOAuth({
-            provider,
-            options: { redirectTo, skipBrowserRedirect: true },
-        });
-        if (error) throw error;
-        if (!data?.url) throw new Error("Supabase no devolvió la URL de autorización.");
-
-        const browserResult = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-        if (browserResult.type !== "success" || !browserResult.url) {
-            return { cancelled: true };
+        if (!supportedProviders.includes(provider)) {
+            throw new Error("Proveedor de autenticación no soportado.");
         }
 
-        const params = Linking.parse(browserResult.url).queryParams ?? {};
-        if (params.error || params.error_description) {
-            throw new Error(String(params.error_description || params.error));
+        try {
+            const redirectTo = Linking.createURL("auth/callback");
+
+            console.log("[OAUTH 1] Redirect generado:", redirectTo);
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider,
+                options: {
+                    redirectTo,
+                    skipBrowserRedirect: true,
+                },
+            });
+
+            if (error) throw error;
+
+            if (!data?.url) {
+                throw new Error("Supabase no devolvió la URL de autorización.");
+            }
+
+            // Registrar solo datos técnicos no sensibles; nunca la URL completa.
+            const authUrl = new URL(data.url);
+
+            console.log("[OAUTH 2] URL de autorización:", {
+                host: authUrl.host,
+                path: authUrl.pathname,
+                provider: authUrl.searchParams.get("provider"),
+                redirect_to: authUrl.searchParams.get("redirect_to"),
+                code_challenge_method:
+                    authUrl.searchParams.get("code_challenge_method"),
+            });
+
+            console.log("[OAUTH 3] Abriendo navegador...");
+
+            const browserResult = await WebBrowser.openAuthSessionAsync(
+                data.url,
+                redirectTo
+            );
+
+            console.log("[OAUTH 4] Resultado del navegador:", {
+                type: browserResult.type,
+                callback: browserResult.url
+                    ? (() => {
+                        const url = new URL(browserResult.url);
+                        return url.origin + url.pathname;
+                    })()
+                    : null,
+            });
+
+            if (browserResult.type !== "success" || !browserResult.url) {
+                return { cancelled: true };
+            }
+
+            const params =
+                Linking.parse(browserResult.url).queryParams ?? {};
+
+            if (params.error || params.error_description) {
+                throw new Error(
+                    String(params.error_description || params.error)
+                );
+            }
+
+            const code = params.code;
+
+            if (typeof code !== "string" || !code) {
+                throw new Error(
+                    "No se recibió el código de autorización. Verifica el callback OAuth."
+                );
+            }
+
+            console.log("[OAUTH 5] Código recibido. Intercambiando sesión...");
+
+            const { data: sessionData, error: exchangeError } =
+                await supabase.auth.exchangeCodeForSession(code);
+
+            if (exchangeError) throw exchangeError;
+
+            if (!sessionData?.session) {
+                throw new Error("No se recibió una sesión válida.");
+            }
+
+            console.log("[OAUTH 6] Sesión autenticada correctamente.");
+
+            return {
+                ...sessionData,
+                cancelled: false,
+            };
+        } catch (error) {
+            console.error("[OAUTH ERROR]", {
+                message: error?.message,
+                code: error?.code,
+                name: error?.name,
+            });
+
+            throw error;
         }
-
-        const code = params.code;
-        if (typeof code !== "string" || !code) {
-            throw new Error("No se recibió el código de autorización. Verifica el callback OAuth.");
-        }
-
-        const { data: sessionData, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) throw exchangeError;
-        if (!sessionData?.session) throw new Error("El proveedor no devolvió una sesión válida.");
-
-        return { ...sessionData, cancelled: false };
     }, []);
 
     // Ingresar como invitado.
