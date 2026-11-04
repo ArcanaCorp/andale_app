@@ -1,5 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const AuthContext = createContext(null);
 
@@ -171,6 +175,43 @@ export function AuthProvider({ children }) {
         }
     }, [signIn, signUp]);
 
+
+    // OAuth compartido para Google y Facebook mediante PKCE + deep link.
+    const signInWithProvider = useCallback(async (provider) => {
+        const supportedProviders = ["google", "facebook"];
+        if (!supportedProviders.includes(provider)) throw new Error("Proveedor de autenticación no soportado.");
+
+        const redirectTo = Linking.createURL("auth/callback");
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider,
+            options: { redirectTo, skipBrowserRedirect: true },
+        });
+        if (error) throw error;
+        if (!data?.url) throw new Error("Supabase no devolvió la URL de autorización.");
+
+        const browserResult = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        if (browserResult.type !== "success" || !browserResult.url) {
+            return { cancelled: true };
+        }
+
+        const params = Linking.parse(browserResult.url).queryParams ?? {};
+        if (params.error || params.error_description) {
+            throw new Error(String(params.error_description || params.error));
+        }
+
+        const code = params.code;
+        if (typeof code !== "string" || !code) {
+            throw new Error("No se recibió el código de autorización. Verifica el callback OAuth.");
+        }
+
+        const { data: sessionData, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) throw exchangeError;
+        if (!sessionData?.session) throw new Error("El proveedor no devolvió una sesión válida.");
+
+        return { ...sessionData, cancelled: false };
+    }, []);
+
     // Ingresar como invitado.
     const signInAsGuest = useCallback(async () => {
         const { data, error } = await supabase.auth.signInAnonymously();
@@ -236,6 +277,7 @@ export function AuthProvider({ children }) {
         signIn,
         signUp,
         authenticate,
+        signInWithProvider,
         signInAsGuest,
         signOut,
         updateProfile,
@@ -248,6 +290,7 @@ export function AuthProvider({ children }) {
         signIn,
         signUp,
         authenticate,
+        signInWithProvider,
         signInAsGuest,
         signOut,
         updateProfile,
