@@ -39,7 +39,7 @@ function Routes({ fontsReady }) {
             {/* Las sesiones anónimas de Supabase también habilitan la aplicación. */}
             <Stack.Protected guard={hasSession} redirectTo="/welcome">
                 <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="places" />
+                <Stack.Screen name="places/[slug]" />
             </Stack.Protected>
         </Stack>
     );
